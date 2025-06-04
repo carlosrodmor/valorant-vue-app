@@ -1,10 +1,12 @@
 import { ref, type Ref } from "vue";
 import type { Agent, TopPlayer, HenrikAPIResponse, LeaderboardResponse } from "@/types";
+import { useAppConfig } from "./useAppConfig";
 
-// Configuración de la API
-const HENRIK_API_KEY = "HDEV-d0128b34-2c5d-4f1f-a04b-2a24ac422e7a";
-const VALORANT_API_BASE = "https://valorant-api.com/v1";
-const HENRIK_API_BASE = "https://api.henrikdev.xyz/valorant";
+// Usar configuración centralizada
+const { apiConfig, isConfigValid, logConfig } = useAppConfig();
+
+// Loggear configuración en desarrollo
+logConfig();
 
 export function useValorantAPI() {
   const isLoading = ref(false);
@@ -13,7 +15,9 @@ export function useValorantAPI() {
   // Función para obtener todos los agentes disponibles
   const fetchAllAgents = async (): Promise<Agent[]> => {
     try {
-      const response = await fetch(`${VALORANT_API_BASE}/agents?isPlayableCharacter=true`);
+      const response = await fetch(
+        `${apiConfig.value.valorantApiBase}/agents?isPlayableCharacter=true`
+      );
       const data = await response.json();
 
       if (data.status === 200 && data.data) {
@@ -29,11 +33,14 @@ export function useValorantAPI() {
   // Función para obtener top players
   const fetchTopPlayers = async (region = "eu", size = 5): Promise<TopPlayer[]> => {
     try {
-      const response = await fetch(`${HENRIK_API_BASE}/v3/leaderboard/${region}/pc?size=${size}`, {
-        headers: {
-          Authorization: HENRIK_API_KEY,
-        },
-      });
+      const response = await fetch(
+        `${apiConfig.value.henrikApiBase}/v3/leaderboard/${region}/pc?size=${size}`,
+        {
+          headers: {
+            Authorization: apiConfig.value.henrikApiKey,
+          },
+        }
+      );
 
       const data: HenrikAPIResponse<LeaderboardResponse> = await response.json();
 
@@ -50,9 +57,9 @@ export function useValorantAPI() {
   // Función para verificar conectividad con Henrik API
   const checkHenrikAPIConnection = async (): Promise<boolean> => {
     try {
-      const response = await fetch(`${HENRIK_API_BASE}/v3/leaderboard/eu/pc?size=1`, {
+      const response = await fetch(`${apiConfig.value.henrikApiBase}/v3/leaderboard/eu/pc?size=1`, {
         headers: {
-          Authorization: HENRIK_API_KEY,
+          Authorization: apiConfig.value.henrikApiKey,
         },
       });
 
@@ -66,6 +73,7 @@ export function useValorantAPI() {
   return {
     isLoading: isLoading as Ref<boolean>,
     error: error as Ref<string | null>,
+    isConfigValid,
     fetchAllAgents,
     fetchTopPlayers,
     checkHenrikAPIConnection,
