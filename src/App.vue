@@ -21,7 +21,6 @@ import Navbar from "./components/Navbar.vue";
 }
 
 .main-content {
-  padding-top: 70px;
   min-height: calc(100vh - 70px);
   position: relative;
 }

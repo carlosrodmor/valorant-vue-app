@@ -1,45 +1,47 @@
 <template>
   <nav class="navigation-bar">
-    <div class="navbar-content">
-      <!-- Logo/Brand -->
-      <div class="brand-section">
-        <RouterLink to="/" class="brand-link">
-          <div class="brand-icon">
-            <div class="icon-dot"></div>
-          </div>
-          <span class="brand-text">TACTICAL NEXUS</span>
-        </RouterLink>
+    <div class="navbar-container">
+      <div class="navbar-content">
+        <!-- Logo/Brand -->
+        <div class="brand-section">
+          <RouterLink to="/" class="brand-link">
+            <div class="brand-icon">
+              <div class="icon-dot"></div>
+            </div>
+            <span class="brand-text">TACTICAL NEXUS</span>
+          </RouterLink>
+        </div>
+
+        <!-- Navigation Menu -->
+        <div class="nav-menu">
+          <RouterLink to="/" class="nav-link">
+            <span class="link-text">Inicio</span>
+          </RouterLink>
+          <RouterLink to="/agents" class="nav-link">
+            <span class="link-text">Agentes</span>
+          </RouterLink>
+          <RouterLink to="/maps" class="nav-link">
+            <span class="link-text">Mapas</span>
+          </RouterLink>
+          <RouterLink to="/arsenal" class="nav-link">
+            <span class="link-text">Arsenal</span>
+          </RouterLink>
+        </div>
+
+        <!-- Action Button -->
+        <div class="action-section">
+          <button class="cta-button">
+            <span class="button-text">Jugar Ahora</span>
+          </button>
+        </div>
       </div>
 
-      <!-- Navigation Menu -->
-      <div class="nav-menu">
-        <RouterLink to="/" class="nav-link">
-          <span class="link-text">Inicio</span>
-        </RouterLink>
-        <RouterLink to="/agents" class="nav-link">
-          <span class="link-text">Agentes</span>
-        </RouterLink>
-        <RouterLink to="/maps" class="nav-link">
-          <span class="link-text">Mapas</span>
-        </RouterLink>
-        <RouterLink to="/arsenal" class="nav-link">
-          <span class="link-text">Arsenal</span>
-        </RouterLink>
+      <!-- Mobile Menu Toggle -->
+      <div class="mobile-toggle">
+        <span class="line"></span>
+        <span class="line"></span>
+        <span class="line"></span>
       </div>
-
-      <!-- Action Button -->
-      <div class="action-section">
-        <button class="cta-button">
-          <span class="button-text">Jugar Ahora</span>
-        </button>
-      </div>
-    </div>
-
-    <!-- Mobile Menu Toggle -->
-    <div class="mobile-toggle">
-      <span class="line"></span>
-      <span class="line"></span>
-      <span class="line"></span>
     </div>
   </nav>
 </template>
@@ -51,25 +53,31 @@ import { RouterLink } from "vue-router";
 <style scoped>
 .navigation-bar {
   position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
+  top: 20px;
+  left: 50%;
+  transform: translateX(-50%);
   z-index: 1000;
-  height: 70px;
+  width: calc(100% - 4rem);
+  max-width: 1200px;
+  transition: all 0.3s ease;
+}
+
+.navbar-container {
   background: rgba(0, 3, 14, 0.95);
   backdrop-filter: var(--blur-glass);
-  border-bottom: 1px solid var(--color-white-05);
+  border: 1px solid var(--color-white-05);
+  border-radius: 50px;
+  padding: 0 2rem;
+  height: 60px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
   transition: all 0.3s ease;
 }
 
 .navbar-content {
-  max-width: 1400px;
-  margin: 0 auto;
   height: 100%;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 0 2rem;
 }
 
 /* Brand Section */
@@ -111,7 +119,7 @@ import { RouterLink } from "vue-router";
 
 .brand-text {
   font-family: var(--font-family);
-  font-size: 1.1rem;
+  font-size: 1rem;
   font-weight: 600;
   color: var(--color-white);
   letter-spacing: 0.1em;
@@ -126,7 +134,7 @@ import { RouterLink } from "vue-router";
 .nav-menu {
   display: flex;
   align-items: center;
-  gap: 2rem;
+  gap: 1.5rem;
 }
 
 .nav-link {
@@ -138,7 +146,7 @@ import { RouterLink } from "vue-router";
 
 .link-text {
   font-family: var(--font-family);
-  font-size: 0.9rem;
+  font-size: 0.85rem;
   font-weight: 400;
   color: var(--color-white-90);
   letter-spacing: 0.025em;
@@ -175,11 +183,11 @@ import { RouterLink } from "vue-router";
 .cta-button {
   background: transparent;
   border: 1px solid var(--color-accent-30);
-  border-radius: 4px;
-  padding: 0.6rem 1.2rem;
+  border-radius: 25px;
+  padding: 0.5rem 1rem;
   color: var(--color-white);
   font-family: var(--font-family);
-  font-size: 0.85rem;
+  font-size: 0.8rem;
   font-weight: 500;
   letter-spacing: 0.025em;
   cursor: pointer;
@@ -214,6 +222,16 @@ import { RouterLink } from "vue-router";
 
 /* Responsive Design */
 @media (max-width: 768px) {
+  .navigation-bar {
+    top: 15px;
+    width: calc(100% - 2rem);
+  }
+
+  .navbar-container {
+    padding: 0 1.5rem;
+    height: 55px;
+  }
+
   .nav-menu {
     display: none;
   }
@@ -222,22 +240,26 @@ import { RouterLink } from "vue-router";
     display: flex;
   }
 
-  .navbar-content {
-    padding: 0 1rem;
-  }
-
-  .navigation-bar {
-    height: 60px;
-  }
-
   .action-section {
     display: none;
+  }
+
+  .brand-text {
+    font-size: 0.9rem;
   }
 }
 
 @media (max-width: 480px) {
+  .navigation-bar {
+    width: calc(100% - 1rem);
+  }
+
+  .navbar-container {
+    padding: 0 1rem;
+  }
+
   .brand-text {
-    font-size: 1rem;
+    font-size: 0.85rem;
   }
 
   .brand-icon {
@@ -246,24 +268,31 @@ import { RouterLink } from "vue-router";
 }
 
 /* Scroll Effect */
-.navigation-bar.scrolled {
+.navigation-bar.scrolled .navbar-container {
   background: rgba(0, 3, 14, 0.98);
-  border-bottom-color: var(--color-white-10);
+  border-color: var(--color-white-10);
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.4);
 }
 
 /* Mount Animation */
 .navigation-bar {
-  animation: slideDown 0.5s ease-out;
+  animation: slideDown 0.6s ease-out;
 }
 
 @keyframes slideDown {
   from {
-    transform: translateY(-100%);
+    transform: translateX(-50%) translateY(-100%);
     opacity: 0;
   }
   to {
-    transform: translateY(0);
+    transform: translateX(-50%) translateY(0);
     opacity: 1;
   }
+}
+
+/* Hover effect for entire navbar */
+.navbar-container:hover {
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.4);
+  border-color: var(--color-white-10);
 }
 </style>
