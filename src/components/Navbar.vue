@@ -1,54 +1,46 @@
 <template>
-  <nav class="navbar">
-    <div class="navbar-inner">
-      <!-- Logo/Brand -->
-      <div class="brand-section">
-        <RouterLink to="/" class="brand-link">
-          <div class="brand-icon">
-            <div class="icon-dot"></div>
-            <div class="icon-ring"></div>
-          </div>
-          <span class="brand-text">TACTICAL NEXUS</span>
-        </RouterLink>
-      </div>
+  <nav class="navigation-bar">
+    <div class="navbar-container">
+      <div class="navbar-content">
+        <!-- Logo/Brand -->
+        <div class="brand-section">
+          <RouterLink to="/" class="brand-link">
+            <div class="brand-icon">
+              <div class="icon-dot"></div>
+            </div>
+            <span class="brand-text">TACTICAL NEXUS</span>
+          </RouterLink>
+        </div>
 
-      <!-- Navigation Menu -->
-      <div class="nav-menu">
-        <div class="nav-links">
+        <!-- Navigation Menu -->
+        <div class="nav-menu">
           <RouterLink to="/" class="nav-link">
             <span class="link-text">Inicio</span>
-            <div class="link-indicator"></div>
           </RouterLink>
           <RouterLink to="/agents" class="nav-link">
             <span class="link-text">Agentes</span>
-            <div class="link-indicator"></div>
           </RouterLink>
           <RouterLink to="/maps" class="nav-link">
             <span class="link-text">Mapas</span>
-            <div class="link-indicator"></div>
           </RouterLink>
           <RouterLink to="/arsenal" class="nav-link">
             <span class="link-text">Arsenal</span>
-            <div class="link-indicator"></div>
           </RouterLink>
+        </div>
+
+        <!-- Action Button -->
+        <div class="action-section">
+          <button class="cta-button">
+            <span class="button-text">Jugar Ahora</span>
+          </button>
         </div>
       </div>
 
-      <!-- Action Button -->
-      <div class="action-section">
-        <button class="play-button">
-          <span class="button-text">Jugar Ahora</span>
-          <div class="button-glow"></div>
-        </button>
-      </div>
-    </div>
-
-    <!-- Mobile Menu Toggle -->
-    <div class="mobile-menu-toggle">
-      <div class="hamburger">
-        <span></span>
-        <span></span>
-        <span></span>
+      <!-- Mobile Menu Toggle -->
+      <div class="mobile-toggle">
+        <span class="line"></span>
+        <span class="line"></span>
+        <span class="line"></span>
       </div>
     </div>
   </nav>
@@ -59,44 +51,33 @@ import { RouterLink } from "vue-router";
 </script>
 
 <style scoped>
-.navbar {
+.navigation-bar {
   position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
+  top: 20px;
+  left: 50%;
+  transform: translateX(-50%);
   z-index: 1000;
-  background: rgba(0, 3, 14, 0.8);
-  backdrop-filter: var(--blur-glass);
-  border-bottom: 1px solid var(--color-white-05);
+  width: calc(100% - 4rem);
+  max-width: 1200px;
   transition: all 0.3s ease;
 }
 
-.navbar::before {
-  content: "";
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: linear-gradient(
-    90deg,
-    var(--color-accent-10) 0%,
-    var(--color-accent-10) 50%,
-    var(--color-accent-10) 100%
-  );
-  pointer-events: none;
+.navbar-container {
+  background: rgba(0, 3, 14, 0.95);
+  backdrop-filter: var(--blur-glass);
+  border: 1px solid var(--color-white-05);
+  border-radius: 50px;
+  padding: 0 2rem;
+  height: 60px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+  transition: all 0.3s ease;
 }
 
-.navbar-inner {
-  max-width: 1400px;
-  margin: 0 auto;
+.navbar-content {
+  height: 100%;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 0 2rem;
-  height: 80px;
-  position: relative;
-  z-index: 1;
 }
 
 /* Brand Section */
@@ -108,53 +89,38 @@ import { RouterLink } from "vue-router";
 .brand-link {
   display: flex;
   align-items: center;
-  gap: 1rem;
+  gap: 0.75rem;
   text-decoration: none;
   transition: all 0.3s ease;
 }
 
 .brand-icon {
   position: relative;
-  width: 32px;
-  height: 32px;
+  width: 24px;
+  height: 24px;
   display: flex;
   align-items: center;
   justify-content: center;
 }
 
 .icon-dot {
-  width: 8px;
-  height: 8px;
-  background: linear-gradient(135deg, var(--color-accent), var(--color-white));
+  width: 6px;
+  height: 6px;
+  background: var(--color-accent);
   border-radius: 50%;
-  position: relative;
-  z-index: 2;
-  transition: all 0.3s ease;
-}
-
-.icon-ring {
-  position: absolute;
-  width: 24px;
-  height: 24px;
-  border: 1px solid var(--color-accent-30);
-  border-radius: 50%;
+  box-shadow: 0 0 8px var(--color-accent-50);
   transition: all 0.3s ease;
 }
 
 .brand-link:hover .icon-dot {
-  transform: scale(1.2);
-  box-shadow: 0 0 20px var(--color-accent-60);
-}
-
-.brand-link:hover .icon-ring {
-  transform: scale(1.2);
-  border-color: var(--color-accent-80);
+  transform: scale(1.3);
+  box-shadow: 0 0 12px var(--color-accent);
 }
 
 .brand-text {
   font-family: var(--font-family);
-  font-size: 1.25rem;
-  font-weight: 500;
+  font-size: 1rem;
+  font-weight: 600;
   color: var(--color-white);
   letter-spacing: 0.1em;
   transition: all 0.3s ease;
@@ -168,18 +134,11 @@ import { RouterLink } from "vue-router";
 .nav-menu {
   display: flex;
   align-items: center;
-}
-
-.nav-links {
-  display: flex;
-  align-items: center;
-  gap: 2rem;
+  gap: 1.5rem;
 }
 
 .nav-link {
   position: relative;
-  display: flex;
-  align-items: center;
   text-decoration: none;
   padding: 0.5rem 0;
   transition: all 0.3s ease;
@@ -187,21 +146,22 @@ import { RouterLink } from "vue-router";
 
 .link-text {
   font-family: var(--font-family);
-  font-size: 0.9rem;
+  font-size: 0.85rem;
   font-weight: 400;
   color: var(--color-white-90);
   letter-spacing: 0.025em;
   transition: all 0.3s ease;
 }
 
-.link-indicator {
+.nav-link::after {
+  content: "";
   position: absolute;
-  bottom: -2px;
+  bottom: 0;
   left: 0;
   width: 0;
   height: 1px;
-  background: linear-gradient(90deg, var(--color-accent), var(--color-white));
-  transition: all 0.3s ease;
+  background: var(--color-accent);
+  transition: width 0.3s ease;
 }
 
 .nav-link:hover .link-text,
@@ -209,8 +169,8 @@ import { RouterLink } from "vue-router";
   color: var(--color-white);
 }
 
-.nav-link:hover .link-indicator,
-.nav-link.router-link-active .link-indicator {
+.nav-link:hover::after,
+.nav-link.router-link-active::after {
   width: 100%;
 }
 
@@ -220,144 +180,119 @@ import { RouterLink } from "vue-router";
   align-items: center;
 }
 
-.play-button {
-  position: relative;
+.cta-button {
   background: transparent;
   border: 1px solid var(--color-accent-30);
-  border-radius: 6px;
-  padding: 0.75rem 1.5rem;
+  border-radius: 25px;
+  padding: 0.5rem 1rem;
   color: var(--color-white);
   font-family: var(--font-family);
-  font-size: 0.875rem;
+  font-size: 0.8rem;
   font-weight: 500;
   letter-spacing: 0.025em;
   cursor: pointer;
   transition: all 0.3s ease;
-  overflow: hidden;
 }
 
-.button-text {
-  position: relative;
-  z-index: 2;
-}
-
-.button-glow {
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: linear-gradient(135deg, var(--color-accent-10), var(--color-accent-20));
-  opacity: 0;
-  transition: all 0.3s ease;
-}
-
-.play-button:hover {
-  border-color: var(--color-accent-60);
-  transform: translateY(-1px);
-}
-
-.play-button:hover .button-glow {
-  opacity: 1;
-}
-
-.play-button:hover .button-text {
+.cta-button:hover {
+  border-color: var(--color-accent);
+  background: var(--color-accent-10);
   color: var(--color-accent);
 }
 
-/* Mobile Menu Toggle */
-.mobile-menu-toggle {
+/* Mobile Toggle */
+.mobile-toggle {
   display: none;
   flex-direction: column;
-  justify-content: center;
-  align-items: center;
-  width: 40px;
-  height: 40px;
+  gap: 3px;
   cursor: pointer;
+  padding: 0.5rem;
 }
 
-.hamburger {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-}
-
-.hamburger span {
-  width: 20px;
+.line {
+  width: 18px;
   height: 1px;
   background: var(--color-white-90);
   transition: all 0.3s ease;
 }
 
-.mobile-menu-toggle:hover .hamburger span {
-  background: var(--color-white);
+.mobile-toggle:hover .line {
+  background: var(--color-accent);
 }
 
 /* Responsive Design */
-@media (max-width: 1024px) {
-  .navbar-inner {
-    padding: 0 1.5rem;
-  }
-
-  .nav-links {
-    gap: 1.5rem;
-  }
-}
-
 @media (max-width: 768px) {
+  .navigation-bar {
+    top: 15px;
+    width: calc(100% - 2rem);
+  }
+
+  .navbar-container {
+    padding: 0 1.5rem;
+    height: 55px;
+  }
+
   .nav-menu {
     display: none;
   }
 
-  .mobile-menu-toggle {
+  .mobile-toggle {
     display: flex;
-  }
-
-  .navbar-inner {
-    padding: 0 1rem;
-    height: 70px;
-  }
-
-  .brand-text {
-    font-size: 1.1rem;
   }
 
   .action-section {
     display: none;
   }
+
+  .brand-text {
+    font-size: 0.9rem;
+  }
 }
 
 @media (max-width: 480px) {
-  .brand-text {
-    font-size: 1rem;
-    letter-spacing: 0.05em;
+  .navigation-bar {
+    width: calc(100% - 1rem);
   }
 
-  .icon-ring,
-  .icon-dot {
+  .navbar-container {
+    padding: 0 1rem;
+  }
+
+  .brand-text {
+    font-size: 0.85rem;
+  }
+
+  .brand-icon {
     transform: scale(0.9);
   }
 }
 
 /* Scroll Effect */
-.navbar.scrolled {
-  background: rgba(0, 3, 14, 0.95);
-  border-bottom-color: var(--color-white-10);
+.navigation-bar.scrolled .navbar-container {
+  background: rgba(0, 3, 14, 0.98);
+  border-color: var(--color-white-10);
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.4);
 }
 
-/* Animation for mount */
-.navbar {
+/* Mount Animation */
+.navigation-bar {
   animation: slideDown 0.6s ease-out;
 }
 
 @keyframes slideDown {
   from {
-    transform: translateY(-100%);
+    transform: translateX(-50%) translateY(-100%);
     opacity: 0;
   }
   to {
-    transform: translateY(0);
+    transform: translateX(-50%) translateY(0);
     opacity: 1;
   }
+}
+
+/* Hover effect for entire navbar */
+.navbar-container:hover {
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.4);
+  border-color: var(--color-white-10);
 }
 </style>
