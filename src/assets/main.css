@@ -1,4 +1,37 @@
+@import url('https://fonts.googleapis.com/css2?family=Hanken+Grotesk:ital,wght@0,100..900;1,100..900&display=swap');
 @import './base.css';
+
+/* Variables CSS globales */
+:root {
+  /* Colores principales */
+  --color-primary-dark: #00030E;
+  --color-secondary-dark: #191B22;
+  --color-accent: #BCA4FF;
+  --color-white: #ffffff;
+
+  /* Opacidades y variaciones */
+  --color-accent-10: rgba(188, 164, 255, 0.1);
+  --color-accent-20: rgba(188, 164, 255, 0.2);
+  --color-accent-30: rgba(188, 164, 255, 0.3);
+  --color-accent-50: rgba(188, 164, 255, 0.5);
+  --color-accent-60: rgba(188, 164, 255, 0.6);
+  --color-accent-80: rgba(188, 164, 255, 0.8);
+
+  --color-white-05: rgba(255, 255, 255, 0.05);
+  --color-white-10: rgba(255, 255, 255, 0.1);
+  --color-white-20: rgba(255, 255, 255, 0.2);
+  --color-white-90: rgba(255, 255, 255, 0.9);
+
+  --color-secondary-60: rgba(25, 27, 34, 0.6);
+  --color-secondary-80: rgba(25, 27, 34, 0.8);
+
+  /* Fuente */
+  --font-family: 'Hanken Grotesk', -apple-system, BlinkMacSystemFont, sans-serif;
+
+  /* Sombras y efectos */
+  --shadow-accent: 0 8px 32px var(--color-accent-10);
+  --blur-glass: blur(20px);
+}
 
 /* Estilos globales para la app de Valorant */
 #app {
@@ -7,8 +40,8 @@
   margin: 0;
   padding: 0;
   font-weight: normal;
-  font-family: 'Arial', sans-serif;
-  background: linear-gradient(135deg, #0a0e13 0%, #111823 50%, #1a1f2e 100%);
+  font-family: var(--font-family);
+  background: linear-gradient(135deg, var(--color-primary-dark) 0%, var(--color-secondary-dark) 50%, var(--color-primary-dark) 100%);
 }
 
 * {
@@ -19,17 +52,52 @@ body {
   margin: 0;
   padding: 0;
   min-height: 100vh;
-  background: linear-gradient(135deg, #0a0e13 0%, #111823 50%, #1a1f2e 100%);
+  background: linear-gradient(135deg, var(--color-primary-dark) 0%, var(--color-secondary-dark) 50%, var(--color-primary-dark) 100%);
+  font-family: var(--font-family);
+  color: var(--color-white);
 }
 
 a {
   text-decoration: none;
-  color: #ffffff;
+  color: var(--color-white);
   transition: all 0.3s ease;
 }
 
 a:hover {
-  color: #ff4654;
+  color: var(--color-accent);
+}
+
+/* Utilidades de tipografía */
+.text-accent {
+  color: var(--color-accent);
+}
+
+.text-white {
+  color: var(--color-white);
+}
+
+.text-white-90 {
+  color: var(--color-white-90);
+}
+
+/* Utilidades de background */
+.bg-glass {
+  background: var(--color-secondary-60);
+  backdrop-filter: var(--blur-glass);
+}
+
+.bg-glass-hover {
+  background: var(--color-secondary-80);
+  backdrop-filter: var(--blur-glass);
+}
+
+/* Utilidades de border */
+.border-accent {
+  border: 1px solid var(--color-accent-20);
+}
+
+.border-accent-hover {
+  border: 1px solid var(--color-accent-50);
 }
 
 /* Scrollbar personalizado */
@@ -38,16 +106,16 @@ a:hover {
 }
 
 ::-webkit-scrollbar-track {
-  background: #111823;
+  background: var(--color-secondary-dark);
 }
 
 ::-webkit-scrollbar-thumb {
-  background: #ff4654;
+  background: var(--color-accent);
   border-radius: 4px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: #ff6b7a;
+  background: var(--color-accent-80);
 }
 
 @media (min-width: 1024px) {
@@ -58,7 +126,7 @@ a:hover {
 
   #app {
     display: grid;
-    grid-template-columns: 1fr 1fr;
-    padding: 0 2rem;
+    grid-template-columns: 1fr;
+    padding: 0;
   }
 }

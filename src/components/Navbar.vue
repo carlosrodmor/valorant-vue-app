@@ -1,36 +1,54 @@
 <template>
-  <nav class="valorant-navbar">
-    <div class="navbar-container">
+  <nav class="navbar">
+    <div class="navbar-inner">
       <!-- Logo/Brand -->
-      <div class="navbar-brand">
+      <div class="brand-section">
         <RouterLink to="/" class="brand-link">
+          <div class="brand-icon">
+            <div class="icon-dot"></div>
+            <div class="icon-ring"></div>
+          </div>
           <span class="brand-text">VALORANT</span>
-          <div class="brand-accent"></div>
         </RouterLink>
       </div>
 
-      <!-- Navigation Links -->
-      <div class="navbar-nav">
-        <RouterLink to="/" class="nav-link">
-          <span class="nav-text">INICIO</span>
-        </RouterLink>
-        <RouterLink to="/agentes" class="nav-link">
-          <span class="nav-text">AGENTES</span>
-        </RouterLink>
-        <RouterLink to="/mapas" class="nav-link">
-          <span class="nav-text">MAPAS</span>
-        </RouterLink>
-        <RouterLink to="/arsenal" class="nav-link">
-          <span class="nav-text">ARSENAL</span>
-        </RouterLink>
+      <!-- Navigation Menu -->
+      <div class="nav-menu">
+        <div class="nav-links">
+          <RouterLink to="/" class="nav-link">
+            <span class="link-text">Inicio</span>
+            <div class="link-indicator"></div>
+          </RouterLink>
+          <RouterLink to="/agents" class="nav-link">
+            <span class="link-text">Agentes</span>
+            <div class="link-indicator"></div>
+          </RouterLink>
+          <RouterLink to="/maps" class="nav-link">
+            <span class="link-text">Mapas</span>
+            <div class="link-indicator"></div>
+          </RouterLink>
+          <RouterLink to="/arsenal" class="nav-link">
+            <span class="link-text">Arsenal</span>
+            <div class="link-indicator"></div>
+          </RouterLink>
+        </div>
       </div>
 
-      <!-- Play Button -->
-      <div class="navbar-actions">
-        <button class="play-btn">
-          <span>JUGAR</span>
-          <div class="btn-glow"></div>
+      <!-- Action Button -->
+      <div class="action-section">
+        <button class="play-button">
+          <span class="button-text">Jugar Ahora</span>
+          <div class="button-glow"></div>
         </button>
+      </div>
+    </div>
+
+    <!-- Mobile Menu Toggle -->
+    <div class="mobile-menu-toggle">
+      <div class="hamburger">
+        <span></span>
+        <span></span>
+        <span></span>
       </div>
     </div>
   </nav>
@@ -38,79 +56,121 @@
 
 <script setup lang="ts">
 import { RouterLink } from "vue-router";
-
-// Exportación por defecto para que pueda ser importado correctamente
-defineOptions({
-  name: "Navbar",
-});
 </script>
 
 <style scoped>
-.valorant-navbar {
+.navbar {
   position: fixed;
   top: 0;
   left: 0;
   right: 0;
   z-index: 1000;
-  background: linear-gradient(135deg, #0a0e13 0%, #111823 100%);
-  border-bottom: 2px solid #ff4654;
-  backdrop-filter: blur(10px);
-  padding: 0;
+  background: rgba(0, 3, 14, 0.8);
+  backdrop-filter: var(--blur-glass);
+  border-bottom: 1px solid var(--color-white-05);
+  transition: all 0.3s ease;
 }
 
-.navbar-container {
+.navbar::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(
+    90deg,
+    var(--color-accent-10) 0%,
+    var(--color-accent-10) 50%,
+    var(--color-accent-10) 100%
+  );
+  pointer-events: none;
+}
+
+.navbar-inner {
   max-width: 1400px;
   margin: 0 auto;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 1rem 2rem;
-  height: 70px;
+  padding: 0 2rem;
+  height: 80px;
+  position: relative;
+  z-index: 1;
 }
 
-/* Brand Styling */
-.navbar-brand {
-  position: relative;
+/* Brand Section */
+.brand-section {
+  display: flex;
+  align-items: center;
 }
 
 .brand-link {
   display: flex;
   align-items: center;
-  gap: 0.5rem;
+  gap: 1rem;
   text-decoration: none;
-  position: relative;
-}
-
-.brand-text {
-  font-family: "Arial Black", Arial, sans-serif;
-  font-size: 1.5rem;
-  font-weight: 900;
-  color: #ffffff;
-  letter-spacing: 2px;
-  text-transform: uppercase;
   transition: all 0.3s ease;
 }
 
-.brand-accent {
-  width: 4px;
+.brand-icon {
+  position: relative;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.icon-dot {
+  width: 8px;
+  height: 8px;
+  background: linear-gradient(135deg, var(--color-accent), var(--color-white));
+  border-radius: 50%;
+  position: relative;
+  z-index: 2;
+  transition: all 0.3s ease;
+}
+
+.icon-ring {
+  position: absolute;
+  width: 24px;
   height: 24px;
-  background: linear-gradient(45deg, #ff4654, #ff6b7a);
-  border-radius: 2px;
+  border: 1px solid var(--color-accent-30);
+  border-radius: 50%;
+  transition: all 0.3s ease;
+}
+
+.brand-link:hover .icon-dot {
+  transform: scale(1.2);
+  box-shadow: 0 0 20px var(--color-accent-60);
+}
+
+.brand-link:hover .icon-ring {
+  transform: scale(1.2);
+  border-color: var(--color-accent-80);
+}
+
+.brand-text {
+  font-family: var(--font-family);
+  font-size: 1.25rem;
+  font-weight: 500;
+  color: var(--color-white);
+  letter-spacing: 0.1em;
   transition: all 0.3s ease;
 }
 
 .brand-link:hover .brand-text {
-  color: #ff4654;
-  text-shadow: 0 0 10px rgba(255, 70, 84, 0.5);
+  color: var(--color-accent);
 }
 
-.brand-link:hover .brand-accent {
-  height: 30px;
-  box-shadow: 0 0 15px rgba(255, 70, 84, 0.7);
+/* Navigation Menu */
+.nav-menu {
+  display: flex;
+  align-items: center;
 }
 
-/* Navigation Links */
-.navbar-nav {
+.nav-links {
   display: flex;
   align-items: center;
   gap: 2rem;
@@ -118,137 +178,186 @@ defineOptions({
 
 .nav-link {
   position: relative;
+  display: flex;
+  align-items: center;
   text-decoration: none;
-  padding: 0.75rem 1rem;
-  border-radius: 4px;
+  padding: 0.5rem 0;
   transition: all 0.3s ease;
-  overflow: hidden;
 }
 
-.nav-text {
-  font-family: "Arial", sans-serif;
+.link-text {
+  font-family: var(--font-family);
   font-size: 0.9rem;
-  font-weight: 600;
-  color: #ffffff;
-  letter-spacing: 1px;
-  text-transform: uppercase;
-  position: relative;
-  z-index: 2;
+  font-weight: 400;
+  color: var(--color-white-90);
+  letter-spacing: 0.025em;
   transition: all 0.3s ease;
 }
 
-.nav-link::before {
-  content: "";
+.link-indicator {
   position: absolute;
-  top: 0;
-  left: -100%;
+  bottom: -2px;
+  left: 0;
+  width: 0;
+  height: 1px;
+  background: linear-gradient(90deg, var(--color-accent), var(--color-white));
+  transition: all 0.3s ease;
+}
+
+.nav-link:hover .link-text,
+.nav-link.router-link-active .link-text {
+  color: var(--color-white);
+}
+
+.nav-link:hover .link-indicator,
+.nav-link.router-link-active .link-indicator {
   width: 100%;
-  height: 100%;
-  background: linear-gradient(90deg, transparent, rgba(255, 70, 84, 0.2), transparent);
-  transition: left 0.5s ease;
 }
 
-.nav-link:hover::before {
-  left: 100%;
+/* Action Section */
+.action-section {
+  display: flex;
+  align-items: center;
 }
 
-.nav-link:hover .nav-text {
-  color: #ff4654;
-}
-
-.nav-link.router-link-active .nav-text {
-  color: #ff4654;
-}
-
-.nav-link.router-link-active::after {
-  content: "";
-  position: absolute;
-  bottom: 0;
-  left: 50%;
-  transform: translateX(-50%);
-  width: 80%;
-  height: 2px;
-  background: linear-gradient(90deg, transparent, #ff4654, transparent);
-}
-
-/* Play Button */
-.navbar-actions {
+.play-button {
   position: relative;
-}
-
-.play-btn {
-  position: relative;
-  background: linear-gradient(135deg, #ff4654, #ff6b7a);
-  border: none;
-  color: #ffffff;
-  font-family: "Arial Black", Arial, sans-serif;
-  font-size: 0.9rem;
-  font-weight: 700;
-  letter-spacing: 1px;
-  text-transform: uppercase;
-  padding: 0.75rem 2rem;
+  background: transparent;
+  border: 1px solid var(--color-accent-30);
   border-radius: 6px;
+  padding: 0.75rem 1.5rem;
+  color: var(--color-white);
+  font-family: var(--font-family);
+  font-size: 0.875rem;
+  font-weight: 500;
+  letter-spacing: 0.025em;
   cursor: pointer;
   transition: all 0.3s ease;
   overflow: hidden;
-  box-shadow: 0 4px 15px rgba(255, 70, 84, 0.3);
 }
 
-.btn-glow {
+.button-text {
+  position: relative;
+  z-index: 2;
+}
+
+.button-glow {
   position: absolute;
   top: 0;
-  left: -100%;
-  width: 100%;
-  height: 100%;
-  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.4), transparent);
-  transition: left 0.6s ease;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(135deg, var(--color-accent-10), var(--color-accent-20));
+  opacity: 0;
+  transition: all 0.3s ease;
 }
 
-.play-btn:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 8px 25px rgba(255, 70, 84, 0.5);
-  background: linear-gradient(135deg, #ff6b7a, #ff4654);
+.play-button:hover {
+  border-color: var(--color-accent-60);
+  transform: translateY(-1px);
 }
 
-.play-btn:hover .btn-glow {
-  left: 100%;
+.play-button:hover .button-glow {
+  opacity: 1;
 }
 
-.play-btn:active {
-  transform: translateY(0);
+.play-button:hover .button-text {
+  color: var(--color-accent);
+}
+
+/* Mobile Menu Toggle */
+.mobile-menu-toggle {
+  display: none;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  width: 40px;
+  height: 40px;
+  cursor: pointer;
+}
+
+.hamburger {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.hamburger span {
+  width: 20px;
+  height: 1px;
+  background: var(--color-white-90);
+  transition: all 0.3s ease;
+}
+
+.mobile-menu-toggle:hover .hamburger span {
+  background: var(--color-white);
 }
 
 /* Responsive Design */
-@media (max-width: 768px) {
-  .navbar-container {
-    padding: 1rem;
+@media (max-width: 1024px) {
+  .navbar-inner {
+    padding: 0 1.5rem;
   }
 
-  .navbar-nav {
-    gap: 1rem;
-  }
-
-  .nav-text {
-    font-size: 0.8rem;
-  }
-
-  .brand-text {
-    font-size: 1.2rem;
-  }
-
-  .play-btn {
-    padding: 0.6rem 1.5rem;
-    font-size: 0.8rem;
+  .nav-links {
+    gap: 1.5rem;
   }
 }
 
-@media (max-width: 640px) {
-  .navbar-nav {
+@media (max-width: 768px) {
+  .nav-menu {
     display: none;
   }
 
-  .navbar-container {
-    justify-content: space-between;
+  .mobile-menu-toggle {
+    display: flex;
+  }
+
+  .navbar-inner {
+    padding: 0 1rem;
+    height: 70px;
+  }
+
+  .brand-text {
+    font-size: 1.1rem;
+  }
+
+  .action-section {
+    display: none;
+  }
+}
+
+@media (max-width: 480px) {
+  .brand-text {
+    font-size: 1rem;
+    letter-spacing: 0.05em;
+  }
+
+  .icon-ring,
+  .icon-dot {
+    transform: scale(0.9);
+  }
+}
+
+/* Scroll Effect */
+.navbar.scrolled {
+  background: rgba(0, 3, 14, 0.95);
+  border-bottom-color: var(--color-white-10);
+}
+
+/* Animation for mount */
+.navbar {
+  animation: slideDown 0.6s ease-out;
+}
+
+@keyframes slideDown {
+  from {
+    transform: translateY(-100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
   }
 }
 </style>

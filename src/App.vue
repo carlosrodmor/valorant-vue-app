@@ -15,12 +15,14 @@ import Navbar from "./components/Navbar.vue";
 <style scoped>
 .app {
   min-height: 100vh;
-  background: linear-gradient(135deg, #0a0e13 0%, #111823 50%, #1a1f2e 100%);
+  background: #0a0e13;
   color: #ffffff;
+  overflow-x: hidden;
 }
 
 .main-content {
-  padding-top: 70px; /* Para compensar la navbar fija */
+  padding-top: 70px;
   min-height: calc(100vh - 70px);
+  position: relative;
 }
 </style>
