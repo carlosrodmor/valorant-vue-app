@@ -8,7 +8,7 @@
             <div class="icon-dot"></div>
             <div class="icon-ring"></div>
           </div>
-          <span class="brand-text">VALORANT</span>
+          <span class="brand-text">TACTICAL NEXUS</span>
         </RouterLink>
       </div>
 
