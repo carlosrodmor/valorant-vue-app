@@ -1,39 +1,112 @@
-# valorant-vue-app
+# Valorant Stats App
 
-This template should help get you started developing with Vue 3 in Vite.
+Aplicación web para visualizar estadísticas de agentes, mapas y armas de Valorant, con datos extraídos automáticamente desde op.gg.
 
-## Recommended IDE Setup
+## Características
 
-[VSCode](https://code.visualstudio.com/) + [Volar](https://marketplace.visualstudio.com/items?itemName=Vue.volar) (and disable Vetur).
+- 📊 Visualización de estadísticas de agentes, mapas y armas
+- 🤖 Scraping automático de datos desde op.gg
+- 📅 Almacenamiento histórico de datos por semana
+- 📱 Diseño responsive adaptado a dispositivos móviles
+- 🔍 Búsqueda y filtrado de datos
+- 📈 Comparación de datos entre semanas
 
-## Type Support for `.vue` Imports in TS
+## Requisitos Previos
 
-TypeScript cannot handle type information for `.vue` imports by default, so we replace the `tsc` CLI with `vue-tsc` for type checking. In editors, we need [Volar](https://marketplace.visualstudio.com/items?itemName=Vue.volar) to make the TypeScript language service aware of `.vue` types.
+- Node.js (v18 o superior)
+- MongoDB (instalado localmente o conexión a una instancia remota)
 
-## Customize configuration
+## Instalación
 
-See [Vite Configuration Reference](https://vite.dev/config/).
+1. Clona el repositorio:
 
-## Project Setup
+```bash
+git clone https://github.com/TuUsuario/valorant-vue-app.git
+cd valorant-vue-app
+```
 
-```sh
+2. Instala las dependencias:
+
+```bash
 npm install
 ```
 
-### Compile and Hot-Reload for Development
+3. Crea un archivo `.env` en la raíz del proyecto con la siguiente configuración:
 
-```sh
-npm run dev
+```
+MONGODB_URI=mongodb://localhost:27017/valorant-stats
+PORT=3001
 ```
 
-### Type-Check, Compile and Minify for Production
+## Uso
 
-```sh
-npm run build
+### Ejecución de la aplicación completa (API + Frontend)
+
+Para iniciar tanto el servidor API como la aplicación frontend:
+
+```bash
+npm run start
 ```
 
-### Lint with [ESLint](https://eslint.org/)
+Esto ejecutará:
 
-```sh
-npm run lint
+- El servidor API en http://localhost:3001
+- La aplicación Vue.js en http://localhost:5173
+
+### Ejecución del scraper
+
+Para ejecutar el scraper y obtener datos actualizados:
+
+```bash
+npm run scraper
 ```
+
+### Ejecución del scheduler
+
+Para ejecutar el programador de tareas que actualizará los datos automáticamente:
+
+```bash
+npm run scheduler
+```
+
+## Estructura del Proyecto
+
+```
+src/
+├── components/         # Componentes Vue
+├── scraper/            # Código del scraper
+│   ├── config.ts       # Configuración del scraper
+│   ├── database.ts     # Gestión de MongoDB
+│   ├── index.ts        # Punto de entrada del scraper
+│   ├── scheduler.ts    # Programador de tareas
+│   └── op-gg.ts        # Lógica de scraping
+├── server/             # Servidor API
+│   └── api.ts          # Definición de endpoints
+├── services/           # Servicios para el frontend
+├── types/              # Tipos TypeScript
+└── views/              # Vistas principales de Vue
+```
+
+## API Endpoints
+
+- `GET /api/health` - Estado del servidor
+- `GET /api/opgg/latest` - Obtener los datos más recientes
+- `GET /api/opgg/agents` - Obtener estadísticas de agentes
+- `GET /api/opgg/agents/:week` - Obtener estadísticas de agentes por semana
+- `GET /api/opgg/maps` - Obtener estadísticas de mapas
+- `GET /api/opgg/maps/:week` - Obtener estadísticas de mapas por semana
+- `GET /api/opgg/weapons` - Obtener estadísticas de armas
+- `GET /api/opgg/weapons/:week` - Obtener estadísticas de armas por semana
+- `GET /api/opgg/weeks` - Obtener lista de semanas disponibles
+
+## Tecnologías Utilizadas
+
+- **Frontend:** Vue.js 3, TypeScript
+- **Backend:** Node.js, Express, TypeScript
+- **Base de datos:** MongoDB
+- **Scraping:** Cheerio, Axios
+- **Automatización:** Node-cron
+
+## Contribuciones
+
+Las contribuciones son bienvenidas. Por favor abre un issue para discutir los cambios que te gustaría hacer.

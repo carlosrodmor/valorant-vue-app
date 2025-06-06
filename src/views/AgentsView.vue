@@ -1,533 +1,430 @@
 <template>
   <div class="agents-view">
-    <!-- Header Section -->
-    <div class="hero-section">
-      <div class="hero-content">
-        <h1 class="hero-title">
-          <span class="title-accent">TIER LIST</span>
-          <span class="title-main">AGENTES</span>
-        </h1>
-        <p class="hero-description">
-          Clasificación de agentes basada en su efectividad y popularidad en el meta actual
-        </p>
+    <!-- Header minimalista -->
+    <header class="header">
+      <h1 class="title">Agentes</h1>
+      <div v-if="lastUpdate" class="update-info">
+        <span class="update-time">Actualizado: {{ formatDate(lastUpdate) }}</span>
       </div>
+    </header>
+
+    <!-- Estado de carga -->
+    <div v-if="loading" class="loading-state">
+      <div class="spinner"></div>
+      <p>Cargando...</p>
     </div>
 
-    <!-- Loading State -->
-    <div v-if="isLoading" class="loading-section">
-      <div class="loading-spinner"></div>
-      <p class="loading-text">Cargando agentes...</p>
+    <!-- Estado de error -->
+    <div v-else-if="error" class="error-state">
+      <p>❌ {{ error }}</p>
+      <button @click="loadStats" class="retry-btn">Reintentar</button>
     </div>
 
-    <!-- Error State -->
-    <div v-else-if="error" class="error-section">
-      <div class="error-content">
-        <h3 class="error-title">Error al cargar los datos</h3>
-        <p class="error-message">{{ error }}</p>
-        <button @click="loadAgents" class="retry-button">Reintentar</button>
+    <!-- Contenido principal -->
+    <main v-else class="main-content">
+      <!-- Controles -->
+      <div class="controls">
+        <div class="search-box">
+          <input
+            v-model="searchTerm"
+            type="text"
+            placeholder="Buscar agente..."
+            class="search-input"
+          />
+        </div>
+
+        <div class="sort-controls">
+          <select v-model="sortBy" @change="sortAgents" class="sort-select">
+            <option value="pickRate">Pick Rate</option>
+            <option value="winRate">Win Rate</option>
+            <option value="name">Nombre</option>
+          </select>
+        </div>
       </div>
-    </div>
 
-    <!-- Tier List -->
-    <div v-else class="tier-list-section">
-      <div class="tier-container">
-        <!-- S Tier -->
-        <div class="tier-row tier-s">
-          <div class="tier-label">
-            <span class="tier-letter">S</span>
-            <span class="tier-name">Meta</span>
+      <!-- Grid de agentes -->
+      <div class="agents-grid">
+        <div
+          v-for="(agent, index) in filteredAgents"
+          :key="agent.agentName"
+          class="agent-card"
+          :class="{ 'top-pick': index < 3 }"
+        >
+          <!-- Imagen del agente -->
+          <div class="agent-image-container">
+            <img
+              :src="getAgentImage(agent.agentName)"
+              :alt="cleanAgentName(agent.agentName)"
+              class="agent-image"
+            />
+            <div class="agent-role-badge">{{ extractRole(agent.agentName) }}</div>
           </div>
-          <div class="tier-agents">
-            <div
-              v-for="agent in tierS"
-              :key="agent.uuid"
-              class="agent-card"
-              :title="agent.displayName"
-            >
-              <img :src="agent.displayIcon" :alt="agent.displayName" class="agent-image" />
-              <span class="agent-name">{{ agent.displayName }}</span>
-              <div class="role-indicator" :class="`role-${agent.role.displayName.toLowerCase()}`">
-                <img
-                  :src="agent.role.displayIcon"
-                  :alt="agent.role.displayName"
-                  class="role-icon"
-                />
-              </div>
+
+          <div class="agent-content">
+            <div class="agent-header">
+              <h3 class="agent-name">{{ cleanAgentName(agent.agentName) }}</h3>
             </div>
-          </div>
-        </div>
 
-        <!-- A Tier -->
-        <div class="tier-row tier-a">
-          <div class="tier-label">
-            <span class="tier-letter">A</span>
-            <span class="tier-name">Fuerte</span>
-          </div>
-          <div class="tier-agents">
-            <div
-              v-for="agent in tierA"
-              :key="agent.uuid"
-              class="agent-card"
-              :title="agent.displayName"
-            >
-              <img :src="agent.displayIcon" :alt="agent.displayName" class="agent-image" />
-              <span class="agent-name">{{ agent.displayName }}</span>
-              <div class="role-indicator" :class="`role-${agent.role.displayName.toLowerCase()}`">
-                <img
-                  :src="agent.role.displayIcon"
-                  :alt="agent.role.displayName"
-                  class="role-icon"
-                />
+            <div class="stats-container">
+              <div class="stat">
+                <span class="stat-label">Pick</span>
+                <span class="stat-value">{{ agent.pickRate }}</span>
               </div>
-            </div>
-          </div>
-        </div>
-
-        <!-- B Tier -->
-        <div class="tier-row tier-b">
-          <div class="tier-label">
-            <span class="tier-letter">B</span>
-            <span class="tier-name">Viable</span>
-          </div>
-          <div class="tier-agents">
-            <div
-              v-for="agent in tierB"
-              :key="agent.uuid"
-              class="agent-card"
-              :title="agent.displayName"
-            >
-              <img :src="agent.displayIcon" :alt="agent.displayName" class="agent-image" />
-              <span class="agent-name">{{ agent.displayName }}</span>
-              <div class="role-indicator" :class="`role-${agent.role.displayName.toLowerCase()}`">
-                <img
-                  :src="agent.role.displayIcon"
-                  :alt="agent.role.displayName"
-                  class="role-icon"
-                />
+              <div class="stat">
+                <span class="stat-label">Win</span>
+                <span class="stat-value">{{ agent.winRate }}</span>
               </div>
-            </div>
-          </div>
-        </div>
-
-        <!-- C Tier -->
-        <div class="tier-row tier-c">
-          <div class="tier-label">
-            <span class="tier-letter">C</span>
-            <span class="tier-name">Situacional</span>
-          </div>
-          <div class="tier-agents">
-            <div
-              v-for="agent in tierC"
-              :key="agent.uuid"
-              class="agent-card"
-              :title="agent.displayName"
-            >
-              <img :src="agent.displayIcon" :alt="agent.displayName" class="agent-image" />
-              <span class="agent-name">{{ agent.displayName }}</span>
-              <div class="role-indicator" :class="`role-${agent.role.displayName.toLowerCase()}`">
-                <img
-                  :src="agent.role.displayIcon"
-                  :alt="agent.role.displayName"
-                  class="role-icon"
-                />
+              <div v-if="agent.avgKDA" class="stat">
+                <span class="stat-label">KDA</span>
+                <span class="stat-value">{{ agent.avgKDA }}</span>
               </div>
             </div>
           </div>
         </div>
       </div>
-
-      <!-- Legend -->
-      <div class="legend-section">
-        <h3 class="legend-title">Roles de Agentes</h3>
-        <div class="role-legend">
-          <div v-for="role in uniqueRoles" :key="role.uuid" class="role-item">
-            <img :src="role.displayIcon" :alt="role.displayName" class="role-legend-icon" />
-            <span class="role-legend-name">{{ role.displayName }}</span>
-          </div>
-        </div>
-      </div>
-    </div>
+    </main>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, computed } from "vue";
-import { useValorantAPI } from "../composables/useValorantAPI";
-import type { Agent, AgentRole } from "../types";
+import { ref, computed, onMounted } from "vue";
+import type { OpggAgentStats } from "../types";
+import { OpggService } from "../services/opggService";
 
-const { fetchAllAgents, isLoading, error } = useValorantAPI();
+// Estado reactivo
+const agents = ref<OpggAgentStats[]>([]);
+const loading = ref(true);
+const error = ref<string | null>(null);
+const lastUpdate = ref<Date | null>(null);
+const currentWeek = ref<string>("");
 
-// Estado de los agentes
-const agents = ref<Agent[]>([]);
+// Controles
+const sortBy = ref<"pickRate" | "winRate" | "name">("pickRate");
+const searchTerm = ref("");
 
-// Clasificación tier (basada en meta actual de Valorant)
-const tierClassification = {
-  S: ["Jett", "Raze", "Omen", "Killjoy", "Sage"], // Meta picks
-  A: ["Reyna", "Phoenix", "Brimstone", "Cypher", "Sova", "Breach"], // Fuerte
-  B: ["Viper", "Yoru", "Skye", "Astra", "Chamber", "KAY/O"], // Viable
-  C: ["Neon", "Fade", "Harbor", "Gekko", "Deadlock", "Iso", "Clove", "Vyse"], // Situacional
-};
+// Computadas
+const filteredAgents = computed(() => {
+  let filtered = agents.value;
 
-// Computed properties para cada tier
-const tierS = computed(() =>
-  agents.value.filter((agent) => tierClassification.S.includes(agent.displayName))
-);
+  // Filtrar por búsqueda
+  if (searchTerm.value) {
+    const term = searchTerm.value.toLowerCase();
+    filtered = filtered.filter(
+      (agent) =>
+        cleanAgentName(agent.agentName).toLowerCase().includes(term) ||
+        extractRole(agent.agentName).toLowerCase().includes(term)
+    );
+  }
 
-const tierA = computed(() =>
-  agents.value.filter((agent) => tierClassification.A.includes(agent.displayName))
-);
-
-const tierB = computed(() =>
-  agents.value.filter((agent) => tierClassification.B.includes(agent.displayName))
-);
-
-const tierC = computed(() =>
-  agents.value.filter((agent) => tierClassification.C.includes(agent.displayName))
-);
-
-// Roles únicos para la leyenda
-const uniqueRoles = computed(() => {
-  const roles = new Map<string, AgentRole>();
-  agents.value.forEach((agent) => {
-    if (!roles.has(agent.role.uuid)) {
-      roles.set(agent.role.uuid, agent.role);
-    }
-  });
-  return Array.from(roles.values());
+  return filtered;
 });
 
-// Función para cargar agentes
-const loadAgents = async () => {
+// Métodos
+async function loadStats() {
   try {
+    loading.value = true;
     error.value = null;
-    agents.value = await fetchAllAgents();
-  } catch (err) {
-    error.value = "No se pudieron cargar los agentes. Verifica tu conexión a internet.";
-    console.error("Error loading agents:", err);
-  }
-};
 
-// Cargar agentes al montar el componente
+    const opggService = new OpggService();
+    const data = await opggService.getLatestData();
+
+    if (data) {
+      agents.value = data.agents;
+      lastUpdate.value = data.scrapedAt;
+      currentWeek.value = data.week;
+      sortAgents();
+    } else {
+      error.value = "No se encontraron datos";
+    }
+  } catch (err) {
+    error.value = err instanceof Error ? err.message : "Error cargando datos";
+  } finally {
+    loading.value = false;
+  }
+}
+
+function sortAgents() {
+  const sorted = [...agents.value];
+
+  switch (sortBy.value) {
+    case "pickRate":
+      sorted.sort((a, b) => {
+        const aRate = parseFloat(a.pickRate.replace("%", "") || "0");
+        const bRate = parseFloat(b.pickRate.replace("%", "") || "0");
+        return bRate - aRate;
+      });
+      break;
+    case "winRate":
+      sorted.sort((a, b) => {
+        const aRate = parseFloat(a.winRate.replace("%", "") || "0");
+        const bRate = parseFloat(b.winRate.replace("%", "") || "0");
+        return bRate - aRate;
+      });
+      break;
+    case "name":
+      sorted.sort((a, b) => cleanAgentName(a.agentName).localeCompare(cleanAgentName(b.agentName)));
+      break;
+  }
+
+  agents.value = sorted;
+}
+
+function cleanAgentName(name: string): string {
+  return name.replace(/(Duelist|Controller|Initiator|Sentinel)$/, "");
+}
+
+function extractRole(name: string): string {
+  const match = name.match(/(Duelist|Controller|Initiator|Sentinel)$/);
+  return match ? match[1] : "Agent";
+}
+
+function formatDate(date: Date): string {
+  return new Date(date).toLocaleString("es-ES", {
+    day: "numeric",
+    month: "short",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+}
+
+function getAgentImage(agentName: string): string {
+  // Buscar el agente por nombre para obtener su icono
+  const agent = agents.value.find((a) => a.agentName === agentName);
+
+  // Si encontramos el agente y tiene icono, lo usamos
+  if (agent && agent.agentIcon) {
+    return agent.agentIcon;
+  }
+
+  // Si no, usamos un placeholder
+  const name = cleanAgentName(agentName).toLowerCase().trim();
+  return "https://placehold.co/200x200?text=" + name;
+}
+
+// Lifecycle
 onMounted(() => {
-  loadAgents();
+  loadStats();
 });
 </script>
 
 <style scoped>
 .agents-view {
   min-height: 100vh;
-  background: linear-gradient(135deg, #0a0e13 0%, #1a1f2e 100%);
-  padding: 100px 2rem 2rem;
+  background: linear-gradient(135deg, #0a0a0a 0%, #1a1a2e 100%);
+  color: #fff;
+  font-family: "Inter", system-ui, sans-serif;
 }
 
-/* Hero Section */
-.hero-section {
+.header {
+  padding: 2rem;
   text-align: center;
-  margin-bottom: 4rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
 }
 
-.hero-content {
-  max-width: 800px;
-  margin: 0 auto;
+.title {
+  font-size: 2.5rem;
+  font-weight: 700;
+  margin-bottom: 0.5rem;
+  background: linear-gradient(45deg, #ff4655, #0f1923);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
 }
 
-.hero-title {
-  font-size: 4rem;
-  font-weight: 900;
-  margin-bottom: 1rem;
+.update-info {
   display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
+  justify-content: center;
+  gap: 1rem;
+  align-items: center;
 }
 
-.title-accent {
-  color: #ff4655;
-  font-size: 0.7em;
-  letter-spacing: 0.3em;
+.update-time {
+  font-size: 0.9rem;
+  color: rgba(255, 255, 255, 0.6);
 }
 
-.title-main {
-  color: #ffffff;
-  letter-spacing: 0.1em;
-}
-
-.hero-description {
-  font-size: 1.2rem;
-  color: #a0a0a0;
-  line-height: 1.6;
-}
-
-/* Loading and Error States */
-.loading-section,
-.error-section {
+.loading-state,
+.error-state {
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  min-height: 400px;
-  text-align: center;
+  min-height: 50vh;
+  gap: 1rem;
 }
 
-.loading-spinner {
-  width: 50px;
-  height: 50px;
-  border: 3px solid #333;
+.spinner {
+  width: 40px;
+  height: 40px;
+  border: 3px solid rgba(255, 255, 255, 0.1);
   border-top: 3px solid #ff4655;
   border-radius: 50%;
   animation: spin 1s linear infinite;
-  margin-bottom: 1rem;
 }
 
 @keyframes spin {
-  0% {
-    transform: rotate(0deg);
-  }
-  100% {
+  to {
     transform: rotate(360deg);
   }
 }
 
-.loading-text {
-  color: #a0a0a0;
-  font-size: 1.1rem;
-}
-
-.error-content {
-  background: rgba(255, 70, 85, 0.1);
-  border: 1px solid rgba(255, 70, 85, 0.3);
-  border-radius: 12px;
-  padding: 2rem;
-  max-width: 500px;
-}
-
-.error-title {
-  color: #ff4655;
-  font-size: 1.5rem;
-  margin-bottom: 1rem;
-}
-
-.error-message {
-  color: #a0a0a0;
-  margin-bottom: 1.5rem;
-}
-
-.retry-button {
+.retry-btn {
   background: #ff4655;
   color: white;
   border: none;
-  padding: 0.75rem 1.5rem;
-  border-radius: 6px;
+  padding: 0.5rem 1rem;
+  border-radius: 4px;
   cursor: pointer;
-  font-weight: 600;
-  transition: background-color 0.3s ease;
+  transition: all 0.3s ease;
 }
 
-.retry-button:hover {
-  background: #e63946;
+.retry-btn:hover {
+  background: #e63e4c;
 }
 
-/* Tier List Section */
-.tier-list-section {
-  max-width: 1400px;
+.main-content {
+  padding: 2rem;
+  max-width: 1200px;
   margin: 0 auto;
 }
 
-.tier-container {
+.controls {
   display: flex;
-  flex-direction: column;
   gap: 1rem;
-  margin-bottom: 4rem;
-}
-
-.tier-row {
-  display: flex;
-  align-items: stretch;
-  background: rgba(26, 31, 46, 0.6);
-  border-radius: 12px;
-  overflow: hidden;
-  border-left: 4px solid;
-}
-
-.tier-s {
-  border-left-color: #ff6b6b;
-}
-.tier-a {
-  border-left-color: #4ecdc4;
-}
-.tier-b {
-  border-left-color: #45b7d1;
-}
-.tier-c {
-  border-left-color: #96ceb4;
-}
-
-.tier-label {
-  background: rgba(0, 0, 0, 0.4);
-  padding: 1.5rem;
-  min-width: 120px;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  text-align: center;
-}
-
-.tier-letter {
-  font-size: 2.5rem;
-  font-weight: 900;
-  color: #ffffff;
-  line-height: 1;
-}
-
-.tier-name {
-  font-size: 0.9rem;
-  color: #a0a0a0;
-  text-transform: uppercase;
-  letter-spacing: 0.1em;
-  margin-top: 0.5rem;
-}
-
-.tier-agents {
-  flex: 1;
-  display: flex;
+  margin-bottom: 2rem;
   flex-wrap: wrap;
-  gap: 0.75rem;
-  padding: 1rem;
-  align-items: center;
+  justify-content: center;
+}
+
+.search-input,
+.sort-select {
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  color: #fff;
+  padding: 0.5rem 1rem;
+  border-radius: 4px;
+  font-size: 0.9rem;
+}
+
+.search-input::placeholder {
+  color: rgba(255, 255, 255, 0.5);
+}
+
+.search-input:focus,
+.sort-select:focus {
+  outline: none;
+  border-color: #ff4655;
+}
+
+.agents-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 1rem;
 }
 
 .agent-card {
-  position: relative;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  background: rgba(255, 255, 255, 0.05);
+  background: rgba(15, 25, 35, 0.7);
   border-radius: 8px;
-  padding: 1rem;
-  min-width: 100px;
+  overflow: hidden;
   transition: all 0.3s ease;
-  cursor: pointer;
+  position: relative;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
 }
 
 .agent-card:hover {
-  background: rgba(255, 255, 255, 0.1);
-  transform: translateY(-2px);
+  transform: translateY(-4px);
+  box-shadow: 0 8px 15px rgba(0, 0, 0, 0.2);
+  background: rgba(20, 30, 40, 0.8);
+}
+
+.agent-card.top-pick {
+  border-left: 3px solid #ff4655;
+}
+
+.agent-image-container {
+  height: 160px;
+  overflow: hidden;
+  background: rgba(0, 0, 0, 0.3);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
 }
 
 .agent-image {
-  width: 60px;
-  height: 60px;
+  width: 100%;
+  height: 100%;
   object-fit: cover;
-  border-radius: 50%;
-  margin-bottom: 0.5rem;
+  transition: transform 0.3s ease;
+}
+
+.agent-card:hover .agent-image {
+  transform: scale(1.05);
+}
+
+.agent-role-badge {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  background: rgba(255, 70, 85, 0.8);
+  color: white;
+  font-size: 0.7rem;
+  padding: 3px 8px;
+  border-radius: 4px;
+  font-weight: 500;
+}
+
+.agent-content {
+  padding: 0.8rem;
+}
+
+.agent-header {
+  margin-bottom: 0.8rem;
 }
 
 .agent-name {
-  font-size: 0.8rem;
-  color: #ffffff;
-  text-align: center;
+  font-size: 1rem;
+  font-weight: 600;
+  margin: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.stats-container {
+  display: flex;
+  justify-content: space-between;
+}
+
+.stat {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.stat-label {
+  font-size: 0.7rem;
+  color: rgba(255, 255, 255, 0.6);
+  margin-bottom: 0.2rem;
+}
+
+.stat-value {
+  font-size: 0.9rem;
   font-weight: 600;
 }
 
-.role-indicator {
-  position: absolute;
-  top: -5px;
-  right: -5px;
-  width: 24px;
-  height: 24px;
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border: 2px solid rgba(26, 31, 46, 0.9);
-}
-
-.role-duelist {
-  background: #ff4655;
-}
-.role-initiator {
-  background: #4ecdc4;
-}
-.role-controller {
-  background: #45b7d1;
-}
-.role-sentinel {
-  background: #96ceb4;
-}
-
-.role-icon {
-  width: 12px;
-  height: 12px;
-  filter: brightness(0) invert(1);
-}
-
-/* Legend Section */
-.legend-section {
-  background: rgba(26, 31, 46, 0.6);
-  border-radius: 12px;
-  padding: 2rem;
-  text-align: center;
-}
-
-.legend-title {
-  color: #ffffff;
-  font-size: 1.5rem;
-  margin-bottom: 1.5rem;
-}
-
-.role-legend {
-  display: flex;
-  justify-content: center;
-  gap: 2rem;
-  flex-wrap: wrap;
-}
-
-.role-item {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  background: rgba(255, 255, 255, 0.05);
-  padding: 0.75rem 1rem;
-  border-radius: 8px;
-}
-
-.role-legend-icon {
-  width: 20px;
-  height: 20px;
-}
-
-.role-legend-name {
-  color: #ffffff;
-  font-weight: 600;
-}
-
-/* Responsive Design */
+/* Responsive */
 @media (max-width: 768px) {
-  .hero-title {
-    font-size: 3rem;
-  }
-
-  .tier-row {
-    flex-direction: column;
-  }
-
-  .tier-label {
-    min-width: auto;
-    padding: 1rem;
-  }
-
-  .tier-letter {
+  .title {
     font-size: 2rem;
   }
 
-  .role-legend {
-    gap: 1rem;
+  .main-content {
+    padding: 1rem;
   }
 
-  .role-item {
-    flex-direction: column;
-    text-align: center;
-    gap: 0.25rem;
+  .agents-grid {
+    grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
   }
 }
 </style>

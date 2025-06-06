@@ -12,11 +12,35 @@ export class OpggService {
    */
   async getLatestData(): Promise<OpggScrapedData | null> {
     try {
+      // Primero intentamos obtener los datos completos
       const response = await fetch(`${this.baseUrl}/latest`);
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
+
+      if (response.ok) {
+        return await response.json();
       }
-      return await response.json();
+
+      // Si no hay datos completos, obtenemos solo los agentes y construimos un objeto
+      console.log("No se encontraron datos completos, obteniendo agentes...");
+      const agentsResponse = await fetch(`${this.baseUrl}/agents`);
+
+      if (!agentsResponse.ok) {
+        throw new Error(`HTTP error! status: ${agentsResponse.status}`);
+      }
+
+      const agents = await agentsResponse.json();
+
+      if (agents && agents.length > 0) {
+        // Construimos un objeto con estructura similar a OpggScrapedData
+        return {
+          agents,
+          maps: [],
+          weapons: [],
+          scrapedAt: new Date(),
+          week: "actual", // Valor predeterminado si no se puede determinar la semana
+        };
+      }
+
+      throw new Error("No se pudieron obtener datos");
     } catch (error) {
       console.error("Error obteniendo datos recientes:", error);
       return null;
@@ -28,7 +52,7 @@ export class OpggService {
    */
   async getAgentStats(week?: string): Promise<OpggAgentStats[]> {
     try {
-      const url = week ? `${this.baseUrl}/agents?week=${week}` : `${this.baseUrl}/agents`;
+      const url = week ? `${this.baseUrl}/agents/${week}` : `${this.baseUrl}/agents`;
       const response = await fetch(url);
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
@@ -45,7 +69,7 @@ export class OpggService {
    */
   async getMapStats(week?: string): Promise<OpggMapStats[]> {
     try {
-      const url = week ? `${this.baseUrl}/maps?week=${week}` : `${this.baseUrl}/maps`;
+      const url = week ? `${this.baseUrl}/maps/${week}` : `${this.baseUrl}/maps`;
       const response = await fetch(url);
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
@@ -62,7 +86,7 @@ export class OpggService {
    */
   async getWeaponStats(week?: string): Promise<OpggWeaponStats[]> {
     try {
-      const url = week ? `${this.baseUrl}/weapons?week=${week}` : `${this.baseUrl}/weapons`;
+      const url = week ? `${this.baseUrl}/weapons/${week}` : `${this.baseUrl}/weapons`;
       const response = await fetch(url);
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);

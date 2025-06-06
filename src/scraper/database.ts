@@ -1,4 +1,5 @@
-import { MongoClient, Db, Collection } from "mongodb";
+import { MongoClient, Db } from "mongodb";
+import type { Collection, Document, Sort } from "mongodb";
 import type { OpggScrapedData, OpggAgentStats, OpggMapStats, OpggWeaponStats } from "../types";
 import { DATABASE_CONFIG } from "./config";
 
@@ -30,7 +31,7 @@ export class DatabaseManager {
     }
   }
 
-  private getCollection<T>(collectionName: string): Collection<T> {
+  private getCollection<T extends Document>(collectionName: string): Collection<T> {
     if (!this.db) {
       throw new Error("Base de datos no conectada");
     }
@@ -39,7 +40,7 @@ export class DatabaseManager {
 
   async saveScrapedData(data: OpggScrapedData): Promise<void> {
     try {
-      const collection = this.getCollection<OpggScrapedData>(
+      const collection = this.getCollection<OpggScrapedData & Document>(
         DATABASE_CONFIG.collections.scrapedData
       );
 
@@ -57,9 +58,9 @@ export class DatabaseManager {
 
   async saveAgentStats(agents: OpggAgentStats[], week: string): Promise<void> {
     try {
-      const collection = this.getCollection<OpggAgentStats & { week: string }>(
-        DATABASE_CONFIG.collections.agents
-      );
+      const collection = this.getCollection<
+        OpggAgentStats & { week: string; updatedAt: Date } & Document
+      >(DATABASE_CONFIG.collections.agents);
 
       // Eliminar estadísticas de agentes de la misma semana
       await collection.deleteMany({ week });
@@ -76,9 +77,9 @@ export class DatabaseManager {
 
   async saveMapStats(maps: OpggMapStats[], week: string): Promise<void> {
     try {
-      const collection = this.getCollection<OpggMapStats & { week: string }>(
-        DATABASE_CONFIG.collections.maps
-      );
+      const collection = this.getCollection<
+        OpggMapStats & { week: string; updatedAt: Date } & Document
+      >(DATABASE_CONFIG.collections.maps);
 
       // Eliminar estadísticas de mapas de la misma semana
       await collection.deleteMany({ week });
@@ -95,9 +96,9 @@ export class DatabaseManager {
 
   async saveWeaponStats(weapons: OpggWeaponStats[], week: string): Promise<void> {
     try {
-      const collection = this.getCollection<OpggWeaponStats & { week: string }>(
-        DATABASE_CONFIG.collections.weapons
-      );
+      const collection = this.getCollection<
+        OpggWeaponStats & { week: string; updatedAt: Date } & Document
+      >(DATABASE_CONFIG.collections.weapons);
 
       // Eliminar estadísticas de armas de la misma semana
       await collection.deleteMany({ week });
@@ -114,7 +115,7 @@ export class DatabaseManager {
 
   async getLatestData(): Promise<OpggScrapedData | null> {
     try {
-      const collection = this.getCollection<OpggScrapedData>(
+      const collection = this.getCollection<OpggScrapedData & Document>(
         DATABASE_CONFIG.collections.scrapedData
       );
       const data = await collection.findOne({}, { sort: { scrapedAt: -1 } });
@@ -127,13 +128,136 @@ export class DatabaseManager {
 
   async getAgentStatsForWeek(week: string): Promise<OpggAgentStats[]> {
     try {
-      const collection = this.getCollection<OpggAgentStats & { week: string }>(
-        DATABASE_CONFIG.collections.agents
-      );
+      const collection = this.getCollection<
+        OpggAgentStats & { week: string; updatedAt: Date } & Document
+      >(DATABASE_CONFIG.collections.agents);
       const agents = await collection.find({ week }).toArray();
-      return agents.map(({ week: _, updatedAt: __, ...agent }) => agent);
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      return agents.map(({ week: _w, updatedAt: _u, ...agent }) => agent);
     } catch (error) {
       console.error("❌ Error obteniendo estadísticas de agentes:", error);
+      return [];
+    }
+  }
+
+  async getAgentStats(week?: string): Promise<OpggAgentStats[]> {
+    try {
+      const collection = this.getCollection<
+        OpggAgentStats & { week: string; updatedAt: Date } & Document
+      >(DATABASE_CONFIG.collections.agents);
+
+      let query = {};
+      if (week) {
+        query = { week };
+      }
+
+      // Si no se especifica semana, obtenemos los más recientes
+      const sortOptions: Sort = week ? {} : { updatedAt: -1 };
+
+      const agents = await collection.find(query).sort(sortOptions).toArray();
+
+      // Si no hay semana específica, filtramos para obtener solo los agentes de la semana más reciente
+      if (!week && agents.length > 0) {
+        const latestWeek = agents[0].week;
+
+        return (
+          agents
+            .filter((agent) => agent.week === latestWeek)
+            // eslint-disable-next-line @typescript-eslint/no-unused-vars
+            .map(({ week: _w, updatedAt: _u, ...agent }) => agent)
+        );
+      }
+
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      return agents.map(({ week: _w, updatedAt: _u, ...agent }) => agent);
+    } catch (error) {
+      console.error("❌ Error obteniendo estadísticas de agentes:", error);
+      return [];
+    }
+  }
+
+  async getMapStats(week?: string): Promise<OpggMapStats[]> {
+    try {
+      const collection = this.getCollection<
+        OpggMapStats & { week: string; updatedAt: Date } & Document
+      >(DATABASE_CONFIG.collections.maps);
+
+      let query = {};
+      if (week) {
+        query = { week };
+      }
+
+      // Si no se especifica semana, obtenemos los más recientes
+      const sortOptions: Sort = week ? {} : { updatedAt: -1 };
+
+      const maps = await collection.find(query).sort(sortOptions).toArray();
+
+      // Si no hay semana específica, filtramos para obtener solo los mapas de la semana más reciente
+      if (!week && maps.length > 0) {
+        const latestWeek = maps[0].week;
+
+        return (
+          maps
+            .filter((map) => map.week === latestWeek)
+            // eslint-disable-next-line @typescript-eslint/no-unused-vars
+            .map(({ week: _w, updatedAt: _u, ...map }) => map)
+        );
+      }
+
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      return maps.map(({ week: _w, updatedAt: _u, ...map }) => map);
+    } catch (error) {
+      console.error("❌ Error obteniendo estadísticas de mapas:", error);
+      return [];
+    }
+  }
+
+  async getWeaponStats(week?: string): Promise<OpggWeaponStats[]> {
+    try {
+      const collection = this.getCollection<
+        OpggWeaponStats & { week: string; updatedAt: Date } & Document
+      >(DATABASE_CONFIG.collections.weapons);
+
+      let query = {};
+      if (week) {
+        query = { week };
+      }
+
+      // Si no se especifica semana, obtenemos los más recientes
+      const sortOptions: Sort = week ? {} : { updatedAt: -1 };
+
+      const weapons = await collection.find(query).sort(sortOptions).toArray();
+
+      // Si no hay semana específica, filtramos para obtener solo las armas de la semana más reciente
+      if (!week && weapons.length > 0) {
+        const latestWeek = weapons[0].week;
+
+        return (
+          weapons
+            .filter((weapon) => weapon.week === latestWeek)
+            // eslint-disable-next-line @typescript-eslint/no-unused-vars
+            .map(({ week: _w, updatedAt: _u, ...weapon }) => weapon)
+        );
+      }
+
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      return weapons.map(({ week: _w, updatedAt: _u, ...weapon }) => weapon);
+    } catch (error) {
+      console.error("❌ Error obteniendo estadísticas de armas:", error);
+      return [];
+    }
+  }
+
+  async getWeeks(): Promise<string[]> {
+    try {
+      const collection = this.getCollection<OpggScrapedData & Document>(
+        DATABASE_CONFIG.collections.scrapedData
+      );
+
+      const weeks = await collection.distinct("week");
+      return weeks.sort().reverse(); // Ordenar descendente para tener las semanas más recientes primero
+    } catch (error) {
+      console.error("❌ Error obteniendo listado de semanas:", error);
       return [];
     }
   }
