@@ -88,13 +88,25 @@
             </button>
           </div>
 
-          <!-- Ordenamiento -->
+          <!-- Ordenamiento elegante -->
           <div class="sort-container">
-            <select v-model="sortBy" @change="sortAgents" class="sort-select">
-              <option value="pickRate">Pick Rate</option>
-              <option value="winRate">Win Rate</option>
-              <option value="name">Nombre</option>
-            </select>
+            <div class="sort-dropdown" :class="{ open: showSortDropdown }">
+              <button @click="showSortDropdown = !showSortDropdown" class="sort-button">
+                <span class="sort-text">{{ getSortLabel(sortBy) }}</span>
+                <span class="sort-arrow">▼</span>
+              </button>
+              <div v-if="showSortDropdown" class="sort-options">
+                <button
+                  v-for="option in sortOptions"
+                  :key="option.value"
+                  @click="selectSort(option.value)"
+                  :class="['sort-option', { active: sortBy === option.value }]"
+                >
+                  <span class="option-icon">{{ option.icon }}</span>
+                  <span class="option-text">{{ option.label }}</span>
+                </button>
+              </div>
+            </div>
           </div>
 
           <!-- Stats rápidas -->
@@ -151,7 +163,7 @@
 
                 <div v-if="agent.avgKDA" class="stat-item">
                   <div class="stat-label">KDA</div>
-                  <div class="stat-value">{{ agent.avgKDA }}</div>
+                  <div class="stat-value">{{ formatKDA(agent.avgKDA) }}</div>
                 </div>
               </div>
             </div>
@@ -163,7 +175,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted } from "vue";
+import { ref, computed, onMounted, onUnmounted } from "vue";
 import type { OpggAgentStats } from "../types";
 import { OpggService } from "../services/opggService";
 
@@ -178,6 +190,7 @@ const currentWeek = ref<string>("");
 const sortBy = ref<"pickRate" | "winRate" | "name">("pickRate");
 const searchTerm = ref("");
 const activeRoleFilters = ref<string[]>([]);
+const showSortDropdown = ref(false);
 
 // Datos para filtros avanzados
 const availableRoles = ref([
@@ -185,6 +198,12 @@ const availableRoles = ref([
   { name: "Controller", icon: "🛡️" },
   { name: "Initiator", icon: "⚡" },
   { name: "Sentinel", icon: "🔒" },
+]);
+
+const sortOptions = ref([
+  { value: "pickRate", label: "Pick Rate", icon: "🎯" },
+  { value: "winRate", label: "Win Rate", icon: "🏆" },
+  { value: "name", label: "Nombre", icon: "📝" },
 ]);
 
 // Computadas
@@ -296,6 +315,22 @@ function getAgentImage(agentName: string): string {
   return "https://placehold.co/100x100?text=" + name;
 }
 
+// Función para simplificar el formato de KDA
+function formatKDA(kda: string): string {
+  if (!kda) return "";
+
+  // Si contiene formato complejo como "1.29:1(16.70 / 15.63 / 3.46)"
+  // Extraer solo el primer número que es el KDA ratio
+  const match = kda.match(/^(\d+\.?\d*)/);
+  if (match) {
+    const ratio = parseFloat(match[1]);
+    return ratio.toFixed(2);
+  }
+
+  // Si ya es un número simple, mantenerlo
+  return kda;
+}
+
 // Métodos nuevos para filtros
 function toggleRoleFilter(role: string) {
   const index = activeRoleFilters.value.indexOf(role);
@@ -306,9 +341,34 @@ function toggleRoleFilter(role: string) {
   }
 }
 
+// Funciones para el dropdown de ordenamiento
+function getSortLabel(sortValue: string): string {
+  const option = sortOptions.value.find((opt) => opt.value === sortValue);
+  return option ? option.label : "Ordenar";
+}
+
+function selectSort(value: "pickRate" | "winRate" | "name") {
+  sortBy.value = value;
+  showSortDropdown.value = false;
+  sortAgents();
+}
+
+// Event listener para cerrar dropdown
+function handleClickOutside(event: Event) {
+  const target = event.target as HTMLElement;
+  if (!target.closest(".sort-dropdown")) {
+    showSortDropdown.value = false;
+  }
+}
+
 // Lifecycle
 onMounted(() => {
   loadStats();
+  document.addEventListener("click", handleClickOutside);
+});
+
+onUnmounted(() => {
+  document.removeEventListener("click", handleClickOutside);
 });
 </script>
 
@@ -967,12 +1027,17 @@ onMounted(() => {
   font-weight: 600;
 }
 
-/* Ordenamiento elegante */
+/* Dropdown de ordenamiento elegante */
 .sort-container {
   position: relative;
 }
 
-.sort-select {
+.sort-dropdown {
+  position: relative;
+  min-width: 160px;
+}
+
+.sort-button {
   background: var(--color-white-05);
   border: 1px solid var(--color-white-10);
   border-radius: 20px;
@@ -983,20 +1048,92 @@ onMounted(() => {
   padding: 0.75rem 1.25rem;
   cursor: pointer;
   transition: all 0.3s ease;
-  appearance: none;
   font-family: var(--font-family);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  width: 100%;
 }
 
-.sort-select:hover,
-.sort-select:focus {
+.sort-button:hover,
+.sort-dropdown.open .sort-button {
   border-color: var(--color-accent);
   background: var(--color-accent-10);
   box-shadow: 0 0 15px var(--color-accent-20);
 }
 
-.sort-select option {
-  background: var(--color-secondary-dark);
+.sort-arrow {
+  transition: transform 0.3s ease;
+  font-size: 0.8rem;
+  color: var(--color-accent);
+}
+
+.sort-dropdown.open .sort-arrow {
+  transform: rotate(180deg);
+}
+
+.sort-options {
+  position: absolute;
+  top: calc(100% + 0.5rem);
+  left: 0;
+  right: 0;
+  background: var(--color-secondary-60);
+  backdrop-filter: var(--blur-glass);
+  border: 1px solid var(--color-accent-20);
+  border-radius: 12px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+  z-index: 100;
+  overflow: hidden;
+  animation: dropdownSlide 0.3s ease-out;
+}
+
+@keyframes dropdownSlide {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.sort-option {
+  background: transparent;
+  border: none;
+  color: var(--color-white-90);
+  padding: 0.75rem 1rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-family: var(--font-family);
+  font-size: 0.9rem;
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  width: 100%;
+  text-align: left;
+}
+
+.sort-option:hover {
+  background: var(--color-white-10);
   color: var(--color-white);
+}
+
+.sort-option.active {
+  background: var(--color-accent);
+  color: var(--color-white);
+}
+
+.option-icon {
+  font-size: 1rem;
+  width: 20px;
+  text-align: center;
+}
+
+.option-text {
+  flex-grow: 1;
 }
 
 /* Stats rápidas elegantes */
