@@ -52,3 +52,54 @@ export interface LoadingState {
 export interface AgentStatsData {
   [agentName: string]: AgentStats;
 }
+
+// Tipos para datos de op.gg scraped
+export interface OpggAgentStats {
+  agentName: string;
+  agentIcon: string;
+  tier: string;
+  pickRate: string;
+  winRate: string;
+  avgKDA: string;
+  avgScore: string;
+  avgDamage: string;
+  position?: string; // Para casos donde el agente tenga posición específica
+}
+
+export interface OpggMapStats {
+  mapName: string;
+  mapIcon: string;
+  pickRate: string;
+  winRateAttack: string;
+  winRateDefense: string;
+  avgRounds: string;
+}
+
+export interface OpggWeaponStats {
+  weaponName: string;
+  weaponIcon: string;
+  pickRate: string;
+  killRate: string;
+  headshotRate: string;
+  avgDamage: string;
+}
+
+export interface OpggScrapedData {
+  agents: OpggAgentStats[];
+  maps: OpggMapStats[];
+  weapons: OpggWeaponStats[];
+  scrapedAt: Date;
+  week: string; // Formato: "2024-W01"
+}
+
+// Tipos para MongoDB
+export interface DatabaseConfig {
+  uri: string;
+  dbName: string;
+  collections: {
+    agents: string;
+    maps: string;
+    weapons: string;
+    scrapedData: string;
+  };
+}

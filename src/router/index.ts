@@ -9,6 +9,11 @@ const router = createRouter({
       name: "home",
       component: HomeView,
     },
+    {
+      path: "/agents",
+      name: "agents",
+      component: () => import("../views/AgentsView.vue"),
+    },
   ],
 });
 
