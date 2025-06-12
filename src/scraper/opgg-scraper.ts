@@ -1,4 +1,4 @@
-import axios, { type AxiosResponse } from "axios";
+import axios, { type AxiosResponse, type AxiosError } from "axios";
 import * as cheerio from "cheerio";
 import type { OpggAgentStats, OpggMapStats, OpggWeaponStats, OpggScrapedData } from "../types";
 import { SCRAPER_CONFIG } from "./config";
@@ -9,6 +9,8 @@ export class OpggScraper {
   private readonly requestDelay: number;
   private readonly retryAttempts: number;
   private readonly timeout: number;
+  private readonly maxConcurrentRequests: number;
+  private activeRequests: number = 0;
 
   constructor() {
     this.baseUrl = SCRAPER_CONFIG.BASE_URL;
@@ -16,47 +18,104 @@ export class OpggScraper {
     this.requestDelay = SCRAPER_CONFIG.REQUEST_DELAY;
     this.retryAttempts = SCRAPER_CONFIG.RETRY_ATTEMPTS;
     this.timeout = SCRAPER_CONFIG.TIMEOUT;
+    this.maxConcurrentRequests = SCRAPER_CONFIG.MAX_CONCURRENT_REQUESTS;
+
+    // Validar configuración
+    this.validateConfig();
+  }
+
+  private validateConfig(): void {
+    if (!this.baseUrl || !this.baseUrl.startsWith("https://")) {
+      throw new Error("Base URL debe ser HTTPS para seguridad");
+    }
+
+    if (this.requestDelay < 1000) {
+      console.warn("Request delay muy bajo, puede causar rate limiting");
+    }
   }
 
   private async makeRequest(url: string): Promise<string> {
+    // Control de concurrencia
+    if (this.activeRequests >= this.maxConcurrentRequests) {
+      await this.delay(this.requestDelay);
+    }
+
+    // Validar URL antes de hacer request
+    try {
+      const parsedUrl = new URL(url);
+      if (!parsedUrl.protocol.startsWith("https")) {
+        throw new Error("Solo se permiten URLs HTTPS");
+      }
+    } catch (error) {
+      throw new Error(`URL inválida: ${url}`);
+    }
+
+    this.activeRequests++;
+
     for (let attempt = 1; attempt <= this.retryAttempts; attempt++) {
       try {
-        console.log(`🔄 Realizando request a: ${url} (intento ${attempt})`);
+        console.log(`🔄 Realizando request a: ${this.sanitizeUrl(url)} (intento ${attempt})`);
 
         const response: AxiosResponse<string> = await axios.get(url, {
           headers: {
             "User-Agent": this.userAgent,
-            Accept: "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8",
-            "Accept-Language": "en-US,en;q=0.5",
-            "Accept-Encoding": "gzip, deflate, br",
-            DNT: "1",
-            Connection: "keep-alive",
-            "Upgrade-Insecure-Requests": "1",
+            ...SCRAPER_CONFIG.ADDITIONAL_HEADERS,
           },
           timeout: this.timeout,
+          maxRedirects: 3, // Limitar redirects
+          validateStatus: (status) => status >= 200 && status < 300, // Solo aceptar 2xx
+          maxContentLength: 10 * 1024 * 1024, // Máximo 10MB
+          decompress: true,
         });
 
-        console.log(`✅ Request exitoso (${response.status})`);
+        console.log(`✅ Request exitoso (${response.status}) - ${response.data.length} bytes`);
+
+        // Validar contenido básico
+        if (!response.data || response.data.length < 100) {
+          throw new Error("Respuesta vacía o muy pequeña");
+        }
 
         // Delay entre requests para no sobrecargar el servidor
         if (attempt < this.retryAttempts) {
           await this.delay(this.requestDelay);
         }
 
+        this.activeRequests--;
         return response.data;
       } catch (error) {
-        console.error(`❌ Error en intento ${attempt}:`, error);
+        const axiosError = error as AxiosError;
+        console.error(`❌ Error en intento ${attempt}:`, {
+          message: axiosError.message,
+          status: axiosError.response?.status,
+          url: this.sanitizeUrl(url),
+        });
 
         if (attempt === this.retryAttempts) {
-          throw new Error(`Failed to fetch ${url} after ${this.retryAttempts} attempts`);
+          this.activeRequests--;
+          throw new Error(
+            `Failed to fetch ${this.sanitizeUrl(url)} after ${this.retryAttempts} attempts: ${
+              axiosError.message
+            }`
+          );
         }
 
-        // Esperar más tiempo antes del siguiente intento
-        await this.delay(this.requestDelay * attempt);
+        // Esperar más tiempo antes del siguiente intento (backoff exponencial)
+        await this.delay(this.requestDelay * Math.pow(2, attempt - 1));
       }
     }
 
+    this.activeRequests--;
     throw new Error("Unexpected error in makeRequest");
+  }
+
+  private sanitizeUrl(url: string): string {
+    // Ocultar parámetros sensibles en logs
+    try {
+      const parsedUrl = new URL(url);
+      return `${parsedUrl.origin}${parsedUrl.pathname}`;
+    } catch {
+      return "[URL inválida]";
+    }
   }
 
   private delay(ms: number): Promise<void> {
@@ -69,6 +128,29 @@ export class OpggScraper {
     const days = Math.floor((now.getTime() - startOfYear.getTime()) / (24 * 60 * 60 * 1000));
     const weekNumber = Math.ceil((days + startOfYear.getDay() + 1) / 7);
     return `${now.getFullYear()}-W${weekNumber.toString().padStart(2, "0")}`;
+  }
+
+  private sanitizeText(text: string): string {
+    return text
+      .replace(/[<>\"'&]/g, "") // Remover caracteres peligrosos
+      .trim()
+      .substring(0, 200); // Limitar longitud
+  }
+
+  private validateImageUrl(url: string): string {
+    if (!url) return "";
+
+    try {
+      const parsedUrl = new URL(url, this.baseUrl);
+      // Solo permitir URLs de op.gg o HTTPS
+      if (parsedUrl.hostname.includes("op.gg") || parsedUrl.protocol === "https:") {
+        return parsedUrl.toString();
+      }
+    } catch {
+      // URL inválida
+    }
+
+    return "";
   }
 
   async scrapeAgentStats(): Promise<OpggAgentStats[]> {
@@ -85,19 +167,27 @@ export class OpggScraper {
             const $row = $(element);
 
             // Extraer datos del agente (ajusta los selectores según la estructura real)
-            const agentName = $row.find(".agent-name, [data-agent-name], .name").text().trim();
-            const agentIcon = $row.find(".agent-icon img, .icon img").attr("src") || "";
-            const tier = $row.find(".tier, .rank, .rating").text().trim();
-            const pickRate = $row.find(".pick-rate, [data-pick-rate]").text().trim();
-            const winRate = $row.find(".win-rate, [data-win-rate]").text().trim();
-            const avgKDA = $row.find(".kda, .avg-kda, [data-kda]").text().trim();
-            const avgScore = $row.find(".score, .avg-score, [data-score]").text().trim();
-            const avgDamage = $row.find(".damage, .avg-damage, [data-damage]").text().trim();
+            const agentName = this.sanitizeText(
+              $row.find(".agent-name, [data-agent-name], .name").text()
+            );
+            const agentIcon = this.validateImageUrl(
+              $row.find(".agent-icon img, .icon img").attr("src") || ""
+            );
+            const tier = this.sanitizeText($row.find(".tier, .rank, .rating").text());
+            const pickRate = this.sanitizeText($row.find(".pick-rate, [data-pick-rate]").text());
+            const winRate = this.sanitizeText($row.find(".win-rate, [data-win-rate]").text());
+            const avgKDA = this.sanitizeText($row.find(".kda, .avg-kda, [data-kda]").text());
+            const avgScore = this.sanitizeText(
+              $row.find(".score, .avg-score, [data-score]").text()
+            );
+            const avgDamage = this.sanitizeText(
+              $row.find(".damage, .avg-damage, [data-damage]").text()
+            );
 
             if (agentName && pickRate && winRate) {
               agents.push({
                 agentName,
-                agentIcon: agentIcon.startsWith("/") ? `https://op.gg${agentIcon}` : agentIcon,
+                agentIcon,
                 tier,
                 pickRate,
                 winRate,
@@ -107,15 +197,25 @@ export class OpggScraper {
               });
             }
           } catch (error) {
-            console.warn(`⚠️ Error procesando fila de agente:`, error);
+            console.warn(
+              `⚠️ Error procesando fila de agente:`,
+              error instanceof Error ? error.message : "Unknown error"
+            );
           }
         }
       );
 
+      if (agents.length === 0) {
+        console.warn("⚠️ No se encontraron agentes, posible cambio en la estructura del sitio");
+      }
+
       console.log(`✅ ${agents.length} agentes extraídos`);
       return agents;
     } catch (error) {
-      console.error("❌ Error scrapeando estadísticas de agentes:", error);
+      console.error(
+        "❌ Error scrapeando estadísticas de agentes:",
+        error instanceof Error ? error.message : "Unknown error"
+      );
       throw error;
     }
   }
@@ -131,20 +231,23 @@ export class OpggScraper {
         try {
           const $row = $(element);
 
-          const mapName = $row.find(".map-name, [data-map-name], .name").text().trim();
-          const mapIcon = $row.find(".map-icon img, .icon img").attr("src") || "";
-          const pickRate = $row.find(".pick-rate, [data-pick-rate]").text().trim();
-          const winRateAttack = $row.find(".win-rate-attack, [data-win-rate-attack]").text().trim();
-          const winRateDefense = $row
-            .find(".win-rate-defense, [data-win-rate-defense]")
-            .text()
-            .trim();
-          const avgRounds = $row.find(".avg-rounds, [data-avg-rounds]").text().trim();
+          const mapName = this.sanitizeText($row.find(".map-name, [data-map-name], .name").text());
+          const mapIcon = this.validateImageUrl(
+            $row.find(".map-icon img, .icon img").attr("src") || ""
+          );
+          const pickRate = this.sanitizeText($row.find(".pick-rate, [data-pick-rate]").text());
+          const winRateAttack = this.sanitizeText(
+            $row.find(".win-rate-attack, [data-win-rate-attack]").text()
+          );
+          const winRateDefense = this.sanitizeText(
+            $row.find(".win-rate-defense, [data-win-rate-defense]").text()
+          );
+          const avgRounds = this.sanitizeText($row.find(".avg-rounds, [data-avg-rounds]").text());
 
           if (mapName && pickRate) {
             maps.push({
               mapName,
-              mapIcon: mapIcon.startsWith("/") ? `https://op.gg${mapIcon}` : mapIcon,
+              mapIcon,
               pickRate,
               winRateAttack,
               winRateDefense,
@@ -152,14 +255,24 @@ export class OpggScraper {
             });
           }
         } catch (error) {
-          console.warn(`⚠️ Error procesando fila de mapa:`, error);
+          console.warn(
+            `⚠️ Error procesando fila de mapa:`,
+            error instanceof Error ? error.message : "Unknown error"
+          );
         }
       });
+
+      if (maps.length === 0) {
+        console.warn("⚠️ No se encontraron mapas, posible cambio en la estructura del sitio");
+      }
 
       console.log(`✅ ${maps.length} mapas extraídos`);
       return maps;
     } catch (error) {
-      console.error("❌ Error scrapeando estadísticas de mapas:", error);
+      console.error(
+        "❌ Error scrapeando estadísticas de mapas:",
+        error instanceof Error ? error.message : "Unknown error"
+      );
       throw error;
     }
   }
@@ -176,17 +289,25 @@ export class OpggScraper {
           try {
             const $row = $(element);
 
-            const weaponName = $row.find(".weapon-name, [data-weapon-name], .name").text().trim();
-            const weaponIcon = $row.find(".weapon-icon img, .icon img").attr("src") || "";
-            const pickRate = $row.find(".pick-rate, [data-pick-rate]").text().trim();
-            const killRate = $row.find(".kill-rate, [data-kill-rate]").text().trim();
-            const headshotRate = $row.find(".headshot-rate, [data-headshot-rate]").text().trim();
-            const avgDamage = $row.find(".damage, .avg-damage, [data-damage]").text().trim();
+            const weaponName = this.sanitizeText(
+              $row.find(".weapon-name, [data-weapon-name], .name").text()
+            );
+            const weaponIcon = this.validateImageUrl(
+              $row.find(".weapon-icon img, .icon img").attr("src") || ""
+            );
+            const pickRate = this.sanitizeText($row.find(".pick-rate, [data-pick-rate]").text());
+            const killRate = this.sanitizeText($row.find(".kill-rate, [data-kill-rate]").text());
+            const headshotRate = this.sanitizeText(
+              $row.find(".headshot-rate, [data-headshot-rate]").text()
+            );
+            const avgDamage = this.sanitizeText(
+              $row.find(".damage, .avg-damage, [data-damage]").text()
+            );
 
             if (weaponName && pickRate) {
               weapons.push({
                 weaponName,
-                weaponIcon: weaponIcon.startsWith("/") ? `https://op.gg${weaponIcon}` : weaponIcon,
+                weaponIcon,
                 pickRate,
                 killRate,
                 headshotRate,
@@ -194,15 +315,25 @@ export class OpggScraper {
               });
             }
           } catch (error) {
-            console.warn(`⚠️ Error procesando fila de arma:`, error);
+            console.warn(
+              `⚠️ Error procesando fila de arma:`,
+              error instanceof Error ? error.message : "Unknown error"
+            );
           }
         }
       );
 
+      if (weapons.length === 0) {
+        console.warn("⚠️ No se encontraron armas, posible cambio en la estructura del sitio");
+      }
+
       console.log(`✅ ${weapons.length} armas extraídas`);
       return weapons;
     } catch (error) {
-      console.error("❌ Error scrapeando estadísticas de armas:", error);
+      console.error(
+        "❌ Error scrapeando estadísticas de armas:",
+        error instanceof Error ? error.message : "Unknown error"
+      );
       throw error;
     }
   }

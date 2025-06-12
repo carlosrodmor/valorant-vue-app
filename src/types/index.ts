@@ -102,4 +102,15 @@ export interface DatabaseConfig {
     weapons: string;
     scrapedData: string;
   };
+  options?: {
+    maxPoolSize?: number;
+    serverSelectionTimeoutMS?: number;
+    socketTimeoutMS?: number;
+    family?: number;
+    retryWrites?: boolean;
+    w?: string | number;
+    ssl?: boolean;
+    sslValidate?: boolean;
+    authSource?: string;
+  };
 }

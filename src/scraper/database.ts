@@ -8,16 +8,29 @@ export class DatabaseManager {
   private db: Db | null = null;
 
   constructor() {
-    this.client = new MongoClient(DATABASE_CONFIG.uri);
+    // Usar opciones de conexión seguras
+    this.client = new MongoClient(DATABASE_CONFIG.uri, {
+      ...DATABASE_CONFIG.options,
+      // Opciones adicionales de seguridad
+      monitorCommands: false, // No monitorear comandos por seguridad
+      compressors: ["zlib"], // Comprimir datos
+    });
   }
 
   async connect(): Promise<void> {
     try {
       await this.client.connect();
       this.db = this.client.db(DATABASE_CONFIG.dbName);
+
+      // Crear índices para mejorar rendimiento y seguridad
+      await this.createIndexes();
+
       console.log(`✅ Conectado a MongoDB: ${DATABASE_CONFIG.dbName}`);
     } catch (error) {
-      console.error("❌ Error conectando a MongoDB:", error);
+      console.error(
+        "❌ Error conectando a MongoDB:",
+        error instanceof Error ? error.message : "Unknown error"
+      );
       throw error;
     }
   }
@@ -27,7 +40,10 @@ export class DatabaseManager {
       await this.client.close();
       console.log("✅ Desconectado de MongoDB");
     } catch (error) {
-      console.error("❌ Error desconectando de MongoDB:", error);
+      console.error(
+        "❌ Error desconectando de MongoDB:",
+        error instanceof Error ? error.message : "Unknown error"
+      );
     }
   }
 
